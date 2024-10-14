@@ -61,10 +61,11 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)  {
 	}
 
 	DISK_NUMBER = 0;
+	uint32_t temp_addr = start_addr;
 	
-	while (start_addr >= JBOD_DISK_SIZE){
+	while (temp_addr >= JBOD_DISK_SIZE){
 		DISK_NUMBER += 1;
-		start_addr -= JBOD_DISK_SIZE;
+		temp_addr -= JBOD_DISK_SIZE;
 
 	return 0;
 
