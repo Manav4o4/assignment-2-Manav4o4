@@ -60,14 +60,46 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)  {
 		return -4;
 	}
 
-	DISK_NUMBER = 0;
-	uint32_t temp_addr = start_addr;
-	
-	while (temp_addr >= JBOD_DISK_SIZE){
-		DISK_NUMBER += 1;
-		temp_addr -= JBOD_DISK_SIZE;
+	uint32_t current_addr = start_addr;
 
-	return 0;
+	uint32_t bytes_read = 0;
+
+	while (bytes_read < read_len){
+
+		current_addr = bytes_read + start_addr;
+		uint8_t current_disk = current_addr / (JBOD_NUM_BLOCKS_PER_DISK * JBOD_BLOCK_SIZE); // Current disk that we are working with
+		uint32_t block_offset = current_addr % (JBOD_NUM_BLOCKS_PER_DISK * JBOD_BLOCK_SIZE); // How many bytes into the disk are we
+		uint8_t current_block = block_offset / JBOD_BLOCK_SIZE;
+		uint32_t offset_in_block = block_offset % JBOD_BLOCK_SIZE;
+
+		uint32_t op = (current_disk << 0) | (2 << 12); // Seek to current disk
+		if (jbod_operation(op, NULL) == -1){
+			return -4;
+		}
+
+		op = (current_block << 4) | (3 << 12);
+		if (jbod_operation(op, NULL) == -1){
+			return -4;
+		}
+
+		op = (4 << 12);
+		if (jbod_operation(op, read_buf) == -1){
+			return -4;
+		}
+
+		bytes_read += JBOD_BLOCK_SIZE - offset_in_block;
+
+	}
+
+	return bytes_read;
+
+
+
+
+
+
+
+
 
 }
 
