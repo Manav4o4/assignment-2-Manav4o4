@@ -55,10 +55,11 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)  {
 	if (is_mounted == 0){
 		return -3;
 	}
-	
-	if (read_buf == NULL){
+
+	if ((read_buf == NULL) && read_len > 0){
 		return -4;
 	}
+
 
 	uint32_t current_addr = start_addr;
 
@@ -69,25 +70,41 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)  {
 		current_addr = bytes_read + start_addr;
 		uint8_t current_disk = current_addr / (JBOD_NUM_BLOCKS_PER_DISK * JBOD_BLOCK_SIZE); // Current disk that we are working with
 		uint32_t block_offset = current_addr % (JBOD_NUM_BLOCKS_PER_DISK * JBOD_BLOCK_SIZE); // How many bytes into the disk are we
-		uint8_t current_block = block_offset / JBOD_BLOCK_SIZE;
-		uint32_t offset_in_block = block_offset % JBOD_BLOCK_SIZE;
+		uint8_t current_block = block_offset / JBOD_BLOCK_SIZE; // Current block that we are working in
+		uint32_t offset_in_block = block_offset % JBOD_BLOCK_SIZE; // How many bytes into the block are we
+
+		printf("Check 1");
 
 		uint32_t op = (current_disk << 0) | (2 << 12); // Seek to current disk
 		if (jbod_operation(op, NULL) == -1){
 			return -4;
 		}
 
+		printf("Check 2");
+
 		op = (current_block << 4) | (3 << 12);
 		if (jbod_operation(op, NULL) == -1){
 			return -4;
 		}
 
+		printf("Check 3");
+
 		op = (4 << 12);
-		if (jbod_operation(op, read_buf) == -1){
+		uint8_t block[JBOD_BLOCK_SIZE]; // Why does a temporary buffer work?
+		if (jbod_operation(op, block) == -1){
 			return -4;
 		}
 
-		bytes_read += JBOD_BLOCK_SIZE - offset_in_block;
+		printf("Check 4");
+
+		uint32_t copied_bytes = JBOD_BLOCK_SIZE - offset_in_block;
+		if(copied_bytes > read_len - bytes_read){
+			copied_bytes = read_len - bytes_read;
+		}
+
+		memcpy(read_buf + bytes_read, block + offset_in_block, copied_bytes); // What does this function do?
+
+		bytes_read += copied_bytes;
 
 	}
 
