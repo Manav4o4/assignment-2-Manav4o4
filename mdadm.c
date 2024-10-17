@@ -73,36 +73,29 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)  {
 		uint8_t current_block = block_offset / JBOD_BLOCK_SIZE; // Current block that we are working in
 		uint32_t offset_in_block = block_offset % JBOD_BLOCK_SIZE; // How many bytes into the block are we
 
-		printf("Check 1");
-
 		uint32_t op = (current_disk << 0) | (2 << 12); // Seek to current disk
 		if (jbod_operation(op, NULL) == -1){
 			return -4;
 		}
 
-		printf("Check 2");
 
 		op = (current_block << 4) | (3 << 12);
 		if (jbod_operation(op, NULL) == -1){
 			return -4;
 		}
 
-		printf("Check 3");
-
 		op = (4 << 12);
-		uint8_t block[JBOD_BLOCK_SIZE]; // Why does a temporary buffer work?
+		uint8_t block[JBOD_BLOCK_SIZE]; // Why a buffer?
 		if (jbod_operation(op, block) == -1){
 			return -4;
 		}
-
-		printf("Check 4");
 
 		uint32_t copied_bytes = JBOD_BLOCK_SIZE - offset_in_block;
 		if(copied_bytes > read_len - bytes_read){
 			copied_bytes = read_len - bytes_read;
 		}
 
-		memcpy(read_buf + bytes_read, block + offset_in_block, copied_bytes); // What does this function do?
+		memcpy(read_buf + bytes_read, block + offset_in_block, copied_bytes); // Why memecpy?
 
 		bytes_read += copied_bytes;
 
